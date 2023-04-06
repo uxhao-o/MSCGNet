@@ -1,0 +1,12 @@
+pydantic
+pandas
+pillow
+matplotlib
+comet_ml
+opencv-python==4.5.3.56
+python-dotenv
+torchmetrics
+scikit-learn
+lightning
+albumentations
+segmentation-models-pytorch
