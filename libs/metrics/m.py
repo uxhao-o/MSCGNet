@@ -62,4 +62,4 @@ def evaluate(val_outputs_gt, num_classes):
     fwavacc = (freq[freq > 0] * iou[freq > 0]).sum()
 
     # 注意这里返回每个类别F1分数的均值的原因是，我们希望每个类别的F1分数都要大，那么这些F1分数的均值也要大，因此可以使用每个类别F1分数的均值
-    return acc, acc_cls, mean_iou, fwavacc, np.nanmean(f1_score)
+    return acc, acc_cls, mean_iou, fwavacc, np.nanmean(f1_score), conmatrix

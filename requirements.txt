@@ -10,3 +10,4 @@ scikit-learn
 lightning
 albumentations
 segmentation-models-pytorch
+pytorch-lightning[extra]==2.0.1

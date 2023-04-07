@@ -13,10 +13,12 @@ from torch.optim.lr_scheduler import CosineAnnealingLR
 from libs.archs import resnet
 from libs.loss.acw_loss import ACWLoss
 from libs.metrics.m import evaluate
+from libs.utils.lookahead import Lookahead
+from libs.utils.lr import init_params_lr
 
 
 class AgricultureSegmentClass(LightningModule):
-    def __init__(self, model_name, num_classes):
+    def __init__(self, model_name, num_classes, use_lr_scheduler=True):
         """
         所有变量将会自动放置在device上
         :param model_name:
@@ -25,8 +27,11 @@ class AgricultureSegmentClass(LightningModule):
         super(AgricultureSegmentClass, self).__init__()
         self.model = resnet.__dict__[model_name](num_classes=num_classes)
         self.num_classes = num_classes
+        self.use_lr_scheduler = use_lr_scheduler
         self.save_hyperparameters()
         self.lr = 1.5e-4 / np.sqrt(3)
+        self.weight_decay = 2e-5
+        self.momentum = 0.9
         self.loss = ACWLoss()
         self.validation_step_outputs = []
 
@@ -34,9 +39,16 @@ class AgricultureSegmentClass(LightningModule):
         return self.model(x)
 
     def configure_optimizers(self):
-        opt = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=2e-5)
-        scheduler = CosineAnnealingLR(opt, 60, 1.18e-6)
-        return {'optimizer': opt, 'lr_scheduler': scheduler}
+        params = init_params_lr(self.model, self.lr, self.weight_decay)
+        if self.use_lr_scheduler:
+            base_optimizer = torch.optim.Adam(params, amsgrad=True)
+            optimizer = Lookahead(base_optimizer, k=6)
+        else:
+            base_optimizer = torch.optim.SGD(params, momentum=self.momentum, nesterov=True)
+            optimizer = Lookahead(base_optimizer, k=6)
+        lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 60, 1.18e-6)
+
+        return {'optimizer': optimizer, 'lr_scheduler': lr_scheduler}
 
     def training_step(self, batch, batch_idx):
         inputs, gts = batch[0], batch[1]
@@ -76,8 +88,10 @@ class AgricultureSegmentClass(LightningModule):
         # preds1 = [i[0] for i in self.validation_step_outputs]
         # gts1 = [i[1] for i in self.validation_step_outputs]
         # preds, gts = torch.cat(preds1), torch.cat(gts1)
-
-        acc, acc_cls, miou, fwavacc, f1 = evaluate(self.validation_step_outputs, self.num_classes)  # 准确率，每一类的准确率，miou，加权准确率
+        acc, acc_cls, miou, fwavacc, f1, conmatrix = evaluate(self.validation_step_outputs, self.num_classes)  # 准确率，每一类的准确率，miou，加权准确率
+        self.logger.experiment.log_confusion_matrix(
+            matrix=conmatrix
+        )
         metrics = {"acc": acc, "acc_cls": acc_cls, "miou": miou, "fwavacc": fwavacc, "f1score": f1}
         self.log_dict(metrics, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs.clear()

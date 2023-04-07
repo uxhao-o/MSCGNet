@@ -1,0 +1,4 @@
+/best_model.ckpt
+/output/models/
+/lightning_logs/
+/config-local.yaml
