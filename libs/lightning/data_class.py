@@ -9,7 +9,7 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE'
 from lightning.pytorch import LightningDataModule
 from torch.utils.data import DataLoader
-from libs.data.dataset import split_train_val_test_sets, AgricultureDataset
+from libs.data.dataset import split_train_val_test_sets, AgricultureDataset, prepare_gt
 
 
 class AgricultureDataClass(LightningDataModule):
@@ -31,6 +31,10 @@ class AgricultureDataClass(LightningDataModule):
         self.scale_rate = scale_rate
         self.batch_size = batch_size
         self.num_workers = num_workers
+
+    def prepare_data(self):
+        prepare_gt(self.train_root)
+        prepare_gt(self.val_root)
 
     def setup(self, stage):
         train_dict, val_dict, test_dict = split_train_val_test_sets(dataset_root=self.dataset_root,
