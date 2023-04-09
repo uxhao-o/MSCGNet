@@ -10,7 +10,6 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from lightning.pytorch import Trainer
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
-
 from libs.data.dataset import prepare_gt
 from libs.lightning import AgricultureSegmentClass, AgricultureDataClass  # noqa: F401
 
@@ -33,6 +32,6 @@ if __name__ == '__main__':
     # datacls = AgricultureDataClass(DATASET_ROOT, DATASET_NAME, batch_size=10)
     # model = AgricultureSegmentClass(MODEL_NAME, NUM_CLASSES)
 
-    cli = LightningCLI(save_config_callback=None)
+    cli = LightningCLI(save_config_callback=None, seed_everything_default=2573406166)
     # trainer.fit(model, datacls)
     # trainer.save_checkpoint("best_model.ckpt")
