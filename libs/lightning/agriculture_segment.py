@@ -74,9 +74,10 @@ class AgricultureSegmentClass(LightningModule):
         # 具体参考 https://blog.csdn.net/weixin_44770969/article/details/124603847
 
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True, logger=True)
-        # preds = outputs.data.max(1)[1].squeeze(1).squeeze(0).cpu()
-        preds = outputs.data.max(1)[1].squeeze(1).squeeze(0)
-        gts = gts.data.squeeze(0)
+        preds = outputs.data.max(1)[1].squeeze(1).squeeze(0).cpu()
+        gts = gts.data.squeeze(0).cpu()
+        # preds = outputs.data.max(1)[1].squeeze(1).squeeze(0)
+        # gts = gts.data.squeeze(0)
         self.validation_step_outputs.append((preds, gts))
         return loss
 
@@ -88,11 +89,10 @@ class AgricultureSegmentClass(LightningModule):
         preds1 = [i[0] for i in self.validation_step_outputs]
         gts1 = [i[1] for i in self.validation_step_outputs]
         preds, gts = torch.cat(preds1), torch.cat(gts1)
-        # acc, acc_cls, miou, fwavacc, f1, conmatrix = evaluate(self.validation_step_outputs, self.num_classes)  # 准确率，每一类的准确率，miou，加权准确率
-        acc, acc_cls, miou, fwavacc, f1, conmatrix = e1(preds, gts, self.num_classes)
-        # self.logger.experiment.log_confusion_matrix(
-        #     matrix=conmatrix
-        # )
+        acc, acc_cls, miou, fwavacc, f1, conmatrix = evaluate(preds, gts, self.num_classes)  # 准确率，每一类的准确率，miou，加权准确率
+        self.logger.experiment.log_confusion_matrix(
+            matrix=conmatrix
+        )
         metrics = {"acc": acc, "acc_cls": acc_cls, "miou": miou, "fwavacc": fwavacc, "f1score": f1}
         self.log_dict(metrics, on_step=False, on_epoch=True, prog_bar=True, logger=True)
         self.validation_step_outputs.clear()

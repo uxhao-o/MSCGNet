@@ -7,6 +7,8 @@
 # Date: 2023/3/31 13:42
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 from lightning.pytorch import Trainer
 from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.callbacks import LearningRateMonitor, ModelCheckpoint
